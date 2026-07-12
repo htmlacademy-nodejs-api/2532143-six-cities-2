@@ -1,4 +1,5 @@
 import { Command } from './command.interface.js';
+import chalk from 'chalk';
 
 export class HelpCommand implements Command {
   public readonly name = '--help';
@@ -6,9 +7,9 @@ export class HelpCommand implements Command {
   public execute(): void {
     console.log(`
 Доступные команды:
-  --help     — выводит информацию о списке команд
-  --version  — выводит версию приложения
-  --import   — импортирует данные из TSV-файла
+  ${chalk.yellow('--help     — выводит информацию о списке команд')}
+  ${chalk.green('--version  — выводит версию приложения')}
+  ${chalk.blue('--import   — импортирует данные из TSV-файла')}
 `);
   }
 }

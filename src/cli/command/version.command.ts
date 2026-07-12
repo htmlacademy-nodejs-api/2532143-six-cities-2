@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { Command } from './command.interface.js';
+import chalk from 'chalk';
 
 export class VersionCommand implements Command {
   public readonly name = '--version';
@@ -7,7 +8,7 @@ export class VersionCommand implements Command {
   public execute(): void {
     try {
       const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
-      console.log(`Версия приложения: ${packageJson.version}`);
+      console.log(chalk.green(`Версия приложения: ${packageJson.version}`));
     } catch {
       console.error('Не удалось прочитать версию из package.json');
     }

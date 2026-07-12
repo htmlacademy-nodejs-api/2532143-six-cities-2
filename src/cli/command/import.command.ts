@@ -1,5 +1,6 @@
 import { Command } from './command.interface.js';
 import { TSVFileReader } from '../../types/tsv-file-reader.js';
+import chalk from 'chalk';
 
 
 export class ImportCommand implements Command {
@@ -11,7 +12,7 @@ export class ImportCommand implements Command {
       return;
     }
 
-    console.log(`Импортирую данные из файла: ${filePath}`);
+    console.log(chalk.blue(`Импортирую данные из файла: ${filePath}`));
     const tsvFileReader = new TSVFileReader(filePath);
     tsvFileReader.read();
     console.log(tsvFileReader.toObject());
