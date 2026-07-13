@@ -3,12 +3,14 @@ import { Command } from './command.interface.js';
 import chalk from 'chalk';
 
 export class VersionCommand implements Command {
-  public readonly name = '--version';
+  public getName(): string {
+    return '--version';
+  }
 
-  public execute(): void {
+  public async execute(..._parameters: string[]): Promise<void> {
     try {
       const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
-      console.log(chalk.green(`Версия приложения: ${packageJson.version}`));
+      console.info(chalk.green(`Версия приложения: ${packageJson.version}`));
     } catch {
       console.error('Не удалось прочитать версию из package.json');
     }

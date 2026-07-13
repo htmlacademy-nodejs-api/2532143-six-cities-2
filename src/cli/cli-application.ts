@@ -11,18 +11,18 @@ export class CLIApplication {
   }
 
   private registerCommands(): void {
-    this.commands['--help'] = new HelpCommand();
-    this.commands['--version'] = new VersionCommand();
-    this.commands['--import'] = new ImportCommand();
+    this.commands[new HelpCommand().getName()] = new HelpCommand();
+    this.commands[new VersionCommand().getName()] = new VersionCommand();
+    this.commands[new ImportCommand().getName()] = new ImportCommand();
   }
 
-  public run(args: string[]): void {
-    const commandName = args[2] ?? '--help';
+  public async run(args: string[]): Promise<void> {
+    const commandName = args[2] ?? new HelpCommand().getName();
     const command = this.commands[commandName];
 
     if (!command) {
       console.error(`Неизвестная команда: ${commandName}`);
-      this.commands['--help'].execute();
+      this.commands[new HelpCommand().getName()].execute();
       return;
     }
 

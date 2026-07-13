@@ -4,12 +4,14 @@ import chalk from 'chalk';
 
 
 export class ImportCommand implements Command {
-  public readonly name = '--import';
-
-  public execute(filePath: string): void {
+  public getName(): string {
+    return '--import';
+  }
+  public async execute(...parameters: string[]): Promise<void> {
+    const filePath = parameters[0] ?? '';
     if (!filePath) {
       console.error('Укажите путь к TSV-файлу. Пример: --import mocks/mocks.tsv');
-      return;
+      throw new Error('Не указан путь к TSV-файлу');
     }
 
     console.log(chalk.blue(`Импортирую данные из файла: ${filePath}`));
