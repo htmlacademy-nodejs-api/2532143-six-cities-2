@@ -27,8 +27,14 @@
     "typescript": "5.2.2"
   },
   "type": "module",
+  "bin": {
+    "cli": "./dist/main.js"
+  },
   "engines": {
     "node": "^18.0.0",
     "npm": ">=8"
+  },
+  "dependencies": {
+    "json-server": "^1.0.0-beta.15"
   }
 }
