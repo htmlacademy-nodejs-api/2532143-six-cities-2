@@ -1,13 +1,10 @@
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
-import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
 import {
   BaseController,
   DocumentExistsMiddleware,
-  HttpError,
   HttpMethod,
-  ValidateDtoMiddleware,
+  PrivateRouteMiddleware,
   ValidateObjectIdMiddleware,
 } from '../../libs/rest/index.js';
 import { Logger } from '../../libs/logger/index.js';
@@ -16,7 +13,6 @@ import { UserService } from '../user/user-service.interface.js';
 import { OfferService } from './offer-service.interface.js';
 import { fillDTO } from '../../helpers/index.js';
 import { OfferRdo } from './rdo/offer.rdo.js';
-import { ChangeFavoriteDto } from '../user/dto/change-favorite.dto.js';
 
 @injectable()
 export class FavoriteController extends BaseController {
@@ -29,14 +25,19 @@ export class FavoriteController extends BaseController {
 
     this.logger.info('Register routes for FavoriteController…');
 
-    this.addRoute({ path: '/', method: HttpMethod.Get, handler: this.index });
+    this.addRoute({
+      path: '/',
+      method: HttpMethod.Get,
+      handler: this.index,
+      middlewares: [new PrivateRouteMiddleware()]
+    });
     this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Post,
       handler: this.create,
       middlewares: [
+        new PrivateRouteMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
-        new ValidateDtoMiddleware(ChangeFavoriteDto),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
       ]
     });
@@ -45,77 +46,44 @@ export class FavoriteController extends BaseController {
       method: HttpMethod.Delete,
       handler: this.delete,
       middlewares: [
+        new PrivateRouteMiddleware(),
         new ValidateObjectIdMiddleware('offerId'),
-        new ValidateDtoMiddleware(ChangeFavoriteDto),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
       ]
     });
   }
 
   public async index(
-    { query }: Request,
+    { tokenPayload }: Request,
     res: Response,
   ): Promise<void> {
-    const userId = String(query.userId ?? '');
+    const offers = await this.userService.findFavorites(tokenPayload.id);
+    const offersRdo = fillDTO(OfferRdo, offers);
+    const items = Array.isArray(offersRdo) ? offersRdo : [offersRdo];
 
-    if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        `${userId} is invalid ObjectID`,
-        'FavoriteController',
-      );
+    for (const offer of items) {
+      offer.isFavorite = true;
     }
 
-    const userExists = await this.userService.exists(userId);
-
-    if (!userExists) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        `User with id ${userId} not found.`,
-        'FavoriteController',
-      );
-    }
-
-    const offers = await this.userService.findFavorites(userId);
-    this.ok(res, fillDTO(OfferRdo, offers));
+    this.ok(res, offersRdo);
   }
 
   public async create(
-    { body, params }: Request,
+    { tokenPayload, params }: Request,
     res: Response,
   ): Promise<void> {
-    const { userId } = body as ChangeFavoriteDto;
-    const userExists = await this.userService.exists(userId);
-
-    if (!userExists) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        `User with id ${userId} not found.`,
-        'FavoriteController',
-      );
-    }
-
-    await this.userService.addFavorite(userId, params.offerId);
+    await this.userService.addFavorite(tokenPayload.id, params.offerId);
     const offer = await this.offerService.findById(params.offerId);
-    this.created(res, fillDTO(OfferRdo, offer));
+    const offerRdo = fillDTO(OfferRdo, offer);
+    offerRdo.isFavorite = true;
+    this.created(res, offerRdo);
   }
 
   public async delete(
-    { body, params }: Request,
+    { tokenPayload, params }: Request,
     res: Response,
   ): Promise<void> {
-    const { userId } = body as ChangeFavoriteDto;
-    const userExists = await this.userService.exists(userId);
-
-    if (!userExists) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        `User with id ${userId} not found.`,
-        'FavoriteController',
-      );
-    }
-
-    await this.userService.removeFavorite(userId, params.offerId);
+    await this.userService.removeFavorite(tokenPayload.id, params.offerId);
     this.noContent(res, {});
   }
 }
